@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <title>Profilim · Highly ID</title>
+
+    <!-- Ana sayfayla aynı altyapı: Tailwind v4 CDN + FontAwesome -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, 'Segoe UI', sans-serif; background: #020617; color: #e2e8f0; }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+        ::selection { background: #3b82f6; color: #fff; }
+        :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+
+        /* Cam efekti */
+        .glass { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 1rem; }
+        .text-gradient { background: linear-gradient(90deg, #60a5fa, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .logo-h { width: 2rem; height: 2rem; border-radius: .6rem; background: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; box-shadow: 0 0 10px rgba(37,99,235,.6); }
+
+        /* Yan menü */
+        .nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem .85rem; border-radius: .75rem; color: #94a3b8; font-size: .9rem; font-weight: 500; transition: background .15s, color .15s; }
+        .nav-link:hover { background: rgba(255,255,255,.05); color: #e2e8f0; }
+        .nav-link[aria-current="page"] { background: rgba(59,130,246,.14); color: #93c5fd; box-shadow: inset 2px 0 0 #3b82f6; }
+        .tab-link { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .6rem .25rem .5rem; font-size: .68rem; color: #94a3b8; font-weight: 500; }
+        .tab-link[aria-current="page"] { color: #93c5fd; }
+
+        /* Form elemanları */
+        .lbl { display: block; font-size: .8rem; font-weight: 600; color: #cbd5e1; margin-bottom: .35rem; }
+        .hint { font-size: .75rem; color: #94a3b8; margin-top: .35rem; }
+        .err { font-size: .78rem; color: #fda4af; margin-top: .35rem; }
+        .field { width: 100%; background: rgba(15,23,42,.7); border: 1px solid rgba(255,255,255,.1); border-radius: .75rem; padding: .65rem .85rem; color: #f1f5f9; font-size: .9rem; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .field::placeholder { color: #64748b; }
+        .field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
+        .field[aria-invalid="true"] { border-color: #f43f5e; }
+
+        /* Butonlar */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .75rem; padding: .6rem 1rem; font-weight: 600; font-size: .875rem; cursor: pointer; transition: background .15s, box-shadow .15s, border-color .15s; border: 1px solid transparent; }
+        .btn-sm { padding: .4rem .75rem; font-size: .8rem; border-radius: .6rem; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #3b82f6; box-shadow: 0 0 18px rgba(59,130,246,.45); }
+        .btn-ghost { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); color: #cbd5e1; }
+        .btn-ghost:hover { background: rgba(255,255,255,.09); }
+        .btn-danger { background: rgba(244,63,94,.1); border-color: rgba(244,63,94,.35); color: #fda4af; }
+        .btn-danger:hover { background: rgba(244,63,94,.2); }
+        .btn-danger-solid { background: #e11d48; color: #fff; }
+        .btn-danger-solid:hover { background: #f43f5e; }
+
+        /* Rozetler */
+        .badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 600; border: 1px solid; }
+        .badge-ok { background: rgba(16,185,129,.12); border-color: rgba(52,211,153,.35); color: #6ee7b7; }
+        .badge-blue { background: rgba(59,130,246,.14); border-color: rgba(96,165,250,.35); color: #93c5fd; }
+        .badge-warn { background: rgba(245,158,11,.12); border-color: rgba(251,191,36,.35); color: #fcd34d; }
+
+        /* Kimlik kartı: sayfanın tek "parlak" öğesi */
+        .idcard { border-radius: 1.25rem; padding: 1px; background: linear-gradient(140deg, #3b82f6, rgba(99,102,241,.35) 45%, #34d399); box-shadow: 0 0 44px rgba(59,130,246,.22); }
+        .idcard-in { position: relative; overflow: hidden; border-radius: calc(1.25rem - 1px); padding: 1.5rem;
+            background: radial-gradient(120% 80% at 0% 0%, rgba(59,130,246,.24), transparent 60%), radial-gradient(90% 70% at 100% 100%, rgba(16,185,129,.16), transparent 60%), #0a1122; }
+        .idcard-in::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+            background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 14px 14px;
+            mask-image: linear-gradient(160deg, transparent 30%, #000 100%); -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%); }
+        .idcard-in > * { position: relative; z-index: 1; }
+        .av { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); flex-shrink: 0; }
+        .av img { width: 100%; height: 100%; object-fit: cover; }
+
+        .emoji-btn { width: 2.5rem; height: 2.5rem; border-radius: .7rem; font-size: 1.15rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); cursor: pointer; transition: background .15s; }
+        .emoji-btn:hover { background: rgba(255,255,255,.1); }
+        .emoji-btn[aria-pressed="true"] { border-color: #3b82f6; background: rgba(59,130,246,.2); box-shadow: 0 0 0 2px rgba(59,130,246,.25); }
+
+        .code-box { display: flex; align-items: center; justify-content: space-between; gap: .75rem; background: rgba(2,6,23,.6); border: 1px solid rgba(255,255,255,.09); border-radius: .75rem; padding: .5rem .5rem .5rem .85rem; font-size: .8rem; color: #cbd5e1; }
+        .code-box > span { overflow-wrap: anywhere; }
+
+        /* Diyalog */
+        dialog { background: transparent; border: 0; padding: 0; color: inherit; max-width: none; }
+        dialog::backdrop { background: rgba(2,6,23,.78); backdrop-filter: blur(4px); }
+        .dlg-box { width: min(92vw, 30rem); background: #0b1224; border: 1px solid rgba(255,255,255,.12); border-radius: 1.1rem; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 30px rgba(59,130,246,.1); }
+
+        /* Bildirim: sadece kullanıcı işlemine yanıt olarak hareket eder */
+        @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .toast { animation: toast-in .2s ease-out; background: #0b1224; border: 1px solid rgba(255,255,255,.14); border-radius: .8rem; padding: .65rem .9rem; font-size: .85rem; display: flex; align-items: center; gap: .6rem; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+
+        .tl-dot { position: absolute; left: -2.2rem; top: .05rem; width: 1.6rem; height: 1.6rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: .68rem; background: #0b1224; border: 1px solid; }
+
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Arka plan parıltısı -->
+    <div class="fixed inset-0 -z-10 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div class="absolute -top-40 left-1/3 w-[520px] h-[520px] bg-blue-600/10 blur-[130px] rounded-full"></div>
+        <div class="absolute bottom-0 right-0 w-[420px] h-[420px] bg-emerald-500/[0.07] blur-[130px] rounded-full"></div>
+    </div>
+
+    <!-- Masaüstü yan menü -->
+    <aside class="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col p-4 border-r border-white/[0.07] bg-slate-950/60 backdrop-blur-xl z-30">
+        <a href="#profil" class="flex items-center gap-2 px-2 pt-1">
+            <div class="logo-h">H</div>
+            <span class="text-xl font-extrabold tracking-wider text-gradient">HIGHLY</span>
+            <span class="text-sm font-semibold text-slate-400">ID</span>
+        </a>
+        <nav id="side-nav" class="mt-8 flex flex-col gap-1" aria-label="Ana menü"></nav>
+        <div class="mt-auto">
+            <div id="side-user" class="flex items-center gap-3 p-2"></div>
+            <button type="button" class="btn btn-ghost btn-sm w-full mt-2" data-action="logout"><i class="fa-solid fa-right-from-bracket"></i> Çıkış yap</button>
+        </div>
+    </aside>
+
+    <!-- Mobil üst çubuk -->
+    <header class="md:hidden sticky top-0 z-30 h-14 px-4 flex items-center justify-between border-b border-white/[0.07] bg-slate-950/80 backdrop-blur-xl">
+        <div class="flex items-center gap-2">
+            <div class="logo-h">H</div>
+            <span class="text-lg font-extrabold tracking-wider text-gradient">HIGHLY</span>
+            <span class="text-sm font-semibold text-slate-400">ID</span>
+        </div>
+        <div id="top-user"></div>
+    </header>
+
+    <!-- Mobil alt menü -->
+    <nav id="tab-nav" class="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-4 border-t border-white/[0.07] bg-slate-950/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]" aria-label="Ana menü"></nav>
+
+    <main class="md:pl-64">
+        <div class="max-w-5xl mx-auto px-4 sm:px-8 py-6 md:py-10 pb-28 md:pb-12">
+
+            <!-- 1. PROFİLİM -->
+            <section id="sec-profil" aria-labelledby="h-profil">
+                <header class="mb-6">
+                    <h1 id="h-profil" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Profilim</h1>
+                    <p class="text-slate-400 mt-1 text-sm max-w-xl">Highly ID kimliğin. Bu bilgiler, giriş yaptığın uygulamalarla yalnızca verdiğin izin kadar paylaşılır.</p>
+                </header>
+
+                <div class="grid lg:grid-cols-[22rem_minmax(0,1fr)] gap-6 items-start">
+                    <div id="id-card" class="lg:sticky lg:top-6"></div>
+
+                    <div class="space-y-6">
+                        <form id="profile-form" class="glass p-5 sm:p-6" novalidate>
+                            <h2 class="font-bold text-lg mb-4">Profil bilgileri</h2>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="lbl" for="f-name">Ad soyad</label>
+                                    <input id="f-name" class="field" autocomplete="name" maxlength="50">
+                                    <p class="err" id="f-name-err" hidden></p>
+                                </div>
+                                <div>
+                                    <label class="lbl" for="f-username">Kullanıcı adı</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">@</span>
+                                        <input id="f-username" class="field" style="padding-left:1.7rem" autocomplete="username" maxlength="20">
+                                    </div>
+                                    <p class="err" id="f-username-err" hidden></p>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="lbl" for="f-email">E-posta</label>
+                                    <input id="f-email" type="email" class="field" autocomplete="email">
+                                    <p class="hint">Adresini değiştirirsen yenisini doğrulaman gerekir.</p>
+                                    <p class="err" id="f-email-err" hidden></p>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <span class="lbl">Profil fotoğrafı</span>
+                                    <div id="emoji-row" class="flex flex-wrap gap-2" role="group" aria-label="Emoji avatar seç"></div>
+                                    <label class="lbl mt-4" for="f-avatar">Ya da fotoğraf adresi</label>
+                                    <input id="f-avatar" type="url" class="field" placeholder="https://ornek.com/foto.jpg" inputmode="url">
+                                    <p class="hint">Adres girersen emoji yerine fotoğrafın görünür.</p>
+                                    <p class="err" id="f-avatar-err" hidden></p>
+                                </div>
+                            </div>
+                            <div class="mt-5 flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-primary">Değişiklikleri kaydet</button>
+                                <button type="button" class="btn btn-ghost" data-action="reset-profile">Geri al</button>
+                            </div>
+                        </form>
+
+                        <form id="password-form" class="glass p-5 sm:p-6" novalidate>
+                            <h2 class="font-bold text-lg mb-4">Şifre değiştir</h2>
+                            <div class="space-y-4 max-w-md">
+                                <div>
+                                    <label class="lbl" for="pw-old">Mevcut şifre</label>
+                                    <div class="relative">
+                                        <input id="pw-old" type="password" class="field" style="padding-right:2.8rem" autocomplete="current-password">
+                                        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-400 hover:text-slate-200" data-action="toggle-pw" data-target="pw-old" aria-label="Şifreyi göster"><i class="fa-solid fa-eye"></i></button>
+                                    </div>
+                                    <p class="err" id="pw-old-err" hidden></p>
+                                </div>
+                                <div>
+                                    <label class="lbl" for="pw-new">Yeni şifre</label>
+                                    <div class="relative">
+                                        <input id="pw-new" type="password" class="field" style="padding-right:2.8rem" autocomplete="new-password">
+                                        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-400 hover:text-slate-200" data-action="toggle-pw" data-target="pw-new" aria-label="Şifreyi göster"><i class="fa-solid fa-eye"></i></button>
+                                    </div>
+                                    <div id="pw-meter" class="mt-2" hidden>
+                                        <div class="grid grid-cols-4 gap-1" id="pw-bars"></div>
+                                        <p class="hint" id="pw-label"></p>
+                                    </div>
+                                    <p class="err" id="pw-new-err" hidden></p>
+                                </div>
+                                <div>
+                                    <label class="lbl" for="pw-again">Yeni şifre (tekrar)</label>
+                                    <input id="pw-again" type="password" class="field" autocomplete="new-password">
+                                    <p class="err" id="pw-again-err" hidden></p>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-5">Şifreyi değiştir</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. BAĞLI UYGULAMALAR -->
+            <section id="sec-uygulamalar" aria-labelledby="h-uygulamalar" hidden>
+                <header class="mb-6">
+                    <h1 id="h-uygulamalar" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Bağlı uygulamalar</h1>
+                    <p class="text-slate-400 mt-1 text-sm max-w-xl">Highly ID ile giriş yaptığın uygulamalar ve onlara verdiğin izinler. Erişimi istediğin an kaldırabilirsin.</p>
+                </header>
+                <div id="apps-list" class="grid gap-4"></div>
+            </section>
+
+            <!-- 3. GÜVENLİK VE GİRİŞLER -->
+            <section id="sec-guvenlik" aria-labelledby="h-guvenlik" hidden>
+                <header class="mb-6">
+                    <h1 id="h-guvenlik" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Güvenlik ve girişler</h1>
+                    <p class="text-slate-400 mt-1 text-sm max-w-xl">Açık oturumların ve hesabındaki son hareketler.</p>
+                </header>
+                <div class="grid lg:grid-cols-2 gap-6 items-start">
+                    <div class="glass p-5 sm:p-6">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <h2 class="font-bold text-lg">Açık oturumlar</h2>
+                            <button type="button" class="btn btn-danger btn-sm" id="end-others" data-action="end-others">Diğerlerini kapat</button>
+                        </div>
+                        <ul id="sessions-list" class="divide-y divide-white/[0.07]"></ul>
+                        <p class="hint mt-4">Diğer cihazların listesi güvenlik nedeniyle gösterilmez. Şüphelendiğin bir durum olursa "Diğerlerini kapat" ile hepsini tek seferde sonlandırabilirsin.</p>
+                    </div>
+                    <div class="glass p-5 sm:p-6">
+                        <h2 class="font-bold text-lg mb-5">Hesap hareketleri</h2>
+                        <ol id="log-list" class="relative ml-7 border-l border-white/10 space-y-5"></ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. GELİŞTİRİCİ -->
+            <section id="sec-gelistirici" aria-labelledby="h-gelistirici" hidden>
+                <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <h1 id="h-gelistirici" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Geliştirici</h1>
+                        <p class="text-slate-400 mt-1 text-sm max-w-xl">Uygulamanda Highly ID ile giriş yapılmasını sağlayan client bilgilerini ve yönlendirme adreslerini yönet.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-action="new-app"><i class="fa-solid fa-plus"></i> Yeni uygulama oluştur</button>
+                </header>
+                <div id="dev-list" class="grid gap-4"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <div id="boot" class="fixed inset-0 z-[80] bg-slate-950 flex items-center justify-center px-6 text-center text-slate-400 text-sm"><span id="boot-msg"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Yükleniyor…</span></div>
+
+    <dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+    <div id="toasts" class="fixed z-[60] right-4 left-4 sm:left-auto bottom-24 md:bottom-6 flex flex-col gap-2 items-end pointer-events-none" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Supabase ayarları ---------- */
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';   // Supabase → Project Settings → API → Project URL
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';                   // aynı sayfadaki "anon public" anahtar (service_role DEĞİL)
+const LOGIN_URL = 'login.html';
+
+/* ---------- Yardımcılar ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtDT = d => new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(d);
+const fmtD = d => new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+function randToken(len) {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const a = new Uint32Array(len); crypto.getRandomValues(a);
+    return Array.from(a, n => chars[n % chars.length]).join('');
+}
+async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+}
+async function busy(btn, fn) {
+    if (btn) btn.disabled = true;
+    try { return await fn(); } finally { if (btn) btn.disabled = false; }
+}
+function fail(err, msg) { console.error(err); toast(msg, 'err'); }
+function bootMessage(html) { $('#boot-msg').innerHTML = html; }
+
+/* ---------- Durum (Supabase'ten dolar) ---------- */
+const state = { uid: null, user: null, apps: [], sessions: [], logs: [], devApps: [] };
+const SCOPES = {
+    profile: { label: 'Temel profil', desc: 'Ad soyad, kullanıcı adı ve profil fotoğrafın', icon: 'fa-user' },
+    email: { label: 'E-posta', desc: 'E-posta adresin ve doğrulama durumu', icon: 'fa-envelope' }
+};
+const scopeInfo = s => SCOPES[s] || { label: s, desc: 'Bu uygulamaya verilmiş izin', icon: 'fa-key' };
+const EMOJIS = ['🚀', '🦊', '🐺', '🌙', '⚡', '🎧', '🧠', '🔥'];
+const LOG_STYLE = {
+    login: ['fa-right-to-bracket', 'border-blue-400/50 text-blue-300'],
+    grant: ['fa-check', 'border-emerald-400/50 text-emerald-300'],
+    revoke: ['fa-ban', 'border-rose-400/50 text-rose-300'],
+    password: ['fa-key', 'border-amber-400/50 text-amber-300'],
+    profile: ['fa-user-pen', 'border-indigo-400/50 text-indigo-300'],
+    session: ['fa-power-off', 'border-slate-400/50 text-slate-300'],
+    dev: ['fa-code', 'border-blue-400/50 text-blue-300']
+};
+let draft = {};
+let sb;
+
+/* ---------- Bildirim ve kayıt ---------- */
+function toast(msg, tone = 'ok') {
+    const el = document.createElement('div');
+    el.className = 'toast pointer-events-auto';
+    const ic = tone === 'ok' ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' : '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>';
+    el.innerHTML = ic + '<span>' + esc(msg) + '</span>';
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.remove(), 3600);
+}
+async function addLog(kind, text) {
+    const { data, error } = await sb.from('audit_logs').insert({ user_id: state.uid, kind, text }).select('created_at').single();
+    if (error) console.error(error);
+    state.logs.unshift({ t: data ? new Date(data.created_at) : new Date(), kind, text });
+    renderLogs();
+}
+
+/* ---------- Avatar ---------- */
+function avatarHTML(u, size, font) {
+    const inner = u.avatarUrl
+        ? `<img src="${esc(u.avatarUrl)}" alt="" referrerpolicy="no-referrer" data-fb="${esc(u.emoji)}">`
+        : esc(u.emoji);
+    return `<span class="av" style="width:${size}px;height:${size}px;font-size:${font}px;border-radius:${Math.round(size * .3)}px">${inner}</span>`;
+}
+document.addEventListener('error', e => {
+    if (e.target.tagName === 'IMG' && e.target.dataset.fb) e.target.parentElement.textContent = e.target.dataset.fb;
+}, true);
+
+/* ---------- Gezinme ---------- */
+const NAV = [
+    { id: 'profil', label: 'Profilim', short: 'Profil', icon: 'fa-user' },
+    { id: 'uygulamalar', label: 'Bağlı uygulamalar', short: 'Uygulamalar', icon: 'fa-link' },
+    { id: 'guvenlik', label: 'Güvenlik ve girişler', short: 'Güvenlik', icon: 'fa-shield-halved' },
+    { id: 'gelistirici', label: 'Geliştirici', short: 'Geliştirici', icon: 'fa-code' }
+];
+const currentId = () => NAV.some(n => n.id === location.hash.slice(1)) ? location.hash.slice(1) : 'profil';
+function route() {
+    const cur = currentId();
+    NAV.forEach(n => { $('#sec-' + n.id).hidden = n.id !== cur; });
+    $('#side-nav').innerHTML = NAV.map(n => `<a class="nav-link" href="#${n.id}" ${n.id === cur ? 'aria-current="page"' : ''}><i class="fa-solid ${n.icon} w-5 text-center"></i><span>${n.label}</span></a>`).join('');
+    $('#tab-nav').innerHTML = NAV.map(n => `<a class="tab-link" href="#${n.id}" ${n.id === cur ? 'aria-current="page"' : ''}><i class="fa-solid ${n.icon} text-base"></i><span>${n.short}</span></a>`).join('');
+    document.title = NAV.find(n => n.id === cur).label + ' · Highly ID';
+    window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+/* ---------- Profil ---------- */
+function renderUserChips() {
+    const u = state.user;
+    $('#side-user').innerHTML = avatarHTML(u, 38, 18) + `<div class="min-w-0"><div class="text-sm font-semibold truncate">${esc(u.name)}</div><div class="text-xs text-slate-400 truncate">@${esc(u.username)}</div></div>`;
+    $('#top-user').innerHTML = avatarHTML(u, 34, 17);
+}
+function renderCard() {
+    const d = draft;
+    const verified = d.email.trim() === state.user.email ? state.user.verified : false;
+    $('#id-card').innerHTML = `
+      <div class="idcard"><div class="idcard-in">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2"><div class="logo-h">H</div><span class="font-extrabold tracking-wider text-gradient">HIGHLY</span><span class="text-sm font-semibold text-slate-400">ID</span></div>
+          <i class="fa-solid fa-wifi text-slate-500" style="transform:rotate(90deg)" aria-hidden="true"></i>
+        </div>
+        <div class="mt-8 flex items-center gap-4">
+          ${avatarHTML(d, 76, 38)}
+          <div class="min-w-0">
+            <div class="text-xl font-extrabold leading-tight break-words">${esc(d.name.trim() || 'Adını yaz')}</div>
+            <div class="text-sm text-slate-400 mt-0.5 truncate">@${esc(d.username.trim() || 'kullanici')}</div>
+          </div>
+        </div>
+        <div class="mt-5 text-sm text-slate-300 break-all">${esc(d.email.trim() || 'E-posta adresin')}</div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          ${verified ? '<span class="badge badge-ok"><i class="fa-solid fa-circle-check"></i> E-posta doğrulandı</span>' : '<span class="badge badge-warn"><i class="fa-solid fa-triangle-exclamation"></i> E-posta doğrulanmadı</span>'}
+          <span class="badge badge-blue"><i class="fa-solid fa-shield-halved"></i> Highly ID</span>
+        </div>
+        <div class="mt-7 flex items-end justify-between text-xs text-slate-400">
+          <div>Üyelik<div class="text-slate-200 font-semibold text-sm">${esc(fmtD(state.user.since))}</div></div>
+          <div class="mono text-right text-slate-300">${esc(state.user.hid)}</div>
+        </div>
+      </div></div>`;
+}
+function renderEmojiRow() {
+    $('#emoji-row').innerHTML = EMOJIS.map(e => `<button type="button" class="emoji-btn" data-action="pick-emoji" data-emoji="${e}" aria-pressed="${draft.emoji === e}" aria-label="Emoji ${e}">${e}</button>`).join('');
+}
+function fillProfileForm() {
+    $('#f-name').value = draft.name; $('#f-username').value = draft.username; $('#f-email').value = draft.email; $('#f-avatar').value = draft.avatarUrl;
+    renderEmojiRow(); renderCard();
+}
+function fieldErr(id, msg) {
+    const p = $('#' + id + '-err'), inp = $('#' + id);
+    if (msg) { p.textContent = msg; p.hidden = false; inp && inp.setAttribute('aria-invalid', 'true'); }
+    else { p.hidden = true; inp && inp.removeAttribute('aria-invalid'); }
+    return !msg;
+}
+document.addEventListener('input', e => {
+    const m = { 'f-name': 'name', 'f-username': 'username', 'f-email': 'email', 'f-avatar': 'avatarUrl' }[e.target.id];
+    if (m) { draft[m] = e.target.value; renderCard(); }
+    if (e.target.id === 'pw-new') renderMeter(e.target.value);
+});
+function validateProfile() {
+    let ok = true;
+    const name = draft.name.trim(), uname = draft.username.trim(), mail = draft.email.trim(), url = draft.avatarUrl.trim();
+    ok = fieldErr('f-name', name.length < 2 ? 'Ad soyad en az 2 karakter olmalı.' : '') && ok;
+    ok = fieldErr('f-username', /^[a-z0-9_]{3,20}$/.test(uname) ? '' : 'Kullanıcı adı 3–20 karakter olmalı; yalnızca küçük harf, rakam ve alt çizgi kullan.') && ok;
+    ok = fieldErr('f-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? '' : 'Geçerli bir e-posta adresi yaz.') && ok;
+    ok = fieldErr('f-avatar', !url || /^https:\/\//i.test(url) ? '' : 'Fotoğraf adresi https:// ile başlamalı.') && ok;
+    return ok;
+}
+$('#profile-form').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!validateProfile()) return;
+    busy(e.submitter, async () => {
+        const next = { name: draft.name.trim(), username: draft.username.trim(), email: draft.email.trim(), emoji: draft.emoji, avatarUrl: draft.avatarUrl.trim() };
+        const { error } = await sb.from('profiles').update({ full_name: next.name, username: next.username, emoji: next.emoji, avatar_url: next.avatarUrl || null }).eq('id', state.uid);
+        if (error) {
+            if (error.code === '23505') fieldErr('f-username', 'Bu kullanıcı adı başkası tarafından alınmış.');
+            else fail(error, 'Profil kaydedilemedi. Biraz sonra tekrar dene.');
+            return;
+        }
+        state.user = { ...state.user, name: next.name, username: next.username, emoji: next.emoji, avatarUrl: next.avatarUrl };
+        let msg = 'Profil kaydedildi.';
+        if (next.email !== state.user.email) {
+            // E-posta, onay bağlantısı tıklanana kadar eski adreste kalır (Supabase davranışı).
+            const { error: mErr } = await sb.auth.updateUser({ email: next.email });
+            if (mErr) { fail(mErr, 'E-posta değiştirilemedi: ' + mErr.message); }
+            else msg = 'Profil kaydedildi. Yeni adresine onay bağlantısı gönderdik; onaylayana kadar eski adresin geçerli.';
+        }
+        draft = { ...state.user };
+        fillProfileForm(); renderUserChips();
+        await addLog('profile', 'Profil bilgileri güncellendi');
+        toast(msg);
+    });
+});
+
+/* Şifre */
+function strength(p) {
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (p.length >= 12) s++;
+    if (/[a-zçğıöşü]/.test(p) && /[A-ZÇĞİÖŞÜ]/.test(p)) s++;
+    if (/\d/.test(p) && /[^A-Za-z0-9]/.test(p)) s++;
+    return s;
+}
+function renderMeter(p) {
+    const box = $('#pw-meter');
+    if (!p) { box.hidden = true; return; }
+    box.hidden = false;
+    const s = strength(p), labels = ['Çok zayıf', 'Zayıf', 'Orta', 'İyi', 'Güçlü'], cols = ['#f43f5e', '#f43f5e', '#f59e0b', '#3b82f6', '#34d399'];
+    $('#pw-bars').innerHTML = [1, 2, 3, 4].map(i => `<div style="height:4px;border-radius:4px;background:${i <= s ? cols[s] : 'rgba(255,255,255,.1)'}"></div>`).join('');
+    $('#pw-label').textContent = 'Şifre gücü: ' + labels[s];
+}
+$('#password-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const form = e.target;
+    const o = $('#pw-old').value, n = $('#pw-new').value, a = $('#pw-again').value;
+    let ok = true;
+    ok = fieldErr('pw-old', o ? '' : 'Mevcut şifreni yaz.') && ok;
+    ok = fieldErr('pw-new', n.length >= 8 ? '' : 'Yeni şifre en az 8 karakter olmalı.') && ok;
+    if (n.length >= 8) ok = fieldErr('pw-new', n === o ? 'Yeni şifre mevcut şifreden farklı olmalı.' : '') && ok;
+    ok = fieldErr('pw-again', a === n ? '' : 'Şifreler eşleşmiyor.') && ok;
+    if (!ok) return;
+    busy(e.submitter, async () => {
+        // Mevcut şifreyi doğrula (updateUser tek başına eski şifreyi sormaz)
+        const { error: vErr } = await sb.auth.signInWithPassword({ email: state.user.email, password: o });
+        if (vErr) { fieldErr('pw-old', 'Mevcut şifre yanlış.'); return; }
+        const { error } = await sb.auth.updateUser({ password: n });
+        if (error) { fail(error, 'Şifre değiştirilemedi: ' + error.message); return; }
+        form.reset(); renderMeter('');
+        await addLog('password', 'Şifre değiştirildi');
+        toast('Şifre değiştirildi.');
+    });
+});
+
+/* ---------- Bağlı uygulamalar ---------- */
+function renderApps() {
+    const el = $('#apps-list');
+    if (!state.apps.length) {
+        el.innerHTML = `<div class="glass p-8 text-center"><div class="text-3xl mb-3" aria-hidden="true">🔗</div><h2 class="font-bold text-lg">Bağlı uygulama yok</h2><p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">Bir uygulamada Highly ID ile giriş yaptığında ve izin verdiğinde burada görünür.</p></div>`;
+        return;
+    }
+    el.innerHTML = state.apps.map(a => `
+      <article class="glass p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white" style="background:linear-gradient(135deg,#2563eb,#10b981)"><i class="fa-solid fa-bolt"></i></div>
+            <div class="min-w-0"><h2 class="font-bold text-lg leading-tight truncate">${esc(a.name)}</h2><p class="text-xs text-slate-400">İzin verildi: ${esc(fmtDT(a.granted))}</p></div>
+          </div>
+          <button type="button" class="btn btn-danger btn-sm shrink-0" data-action="revoke-app" data-id="${esc(a.id)}">Erişimi kaldır</button>
+        </div>
+        <ul class="mt-4 grid sm:grid-cols-2 gap-3">
+          ${a.scopes.map(s => { const i = scopeInfo(s); return `<li class="flex items-start gap-3 rounded-xl bg-white/[0.03] border border-white/[0.07] p-3"><i class="fa-solid ${i.icon} text-blue-300 mt-0.5 w-4 text-center"></i><div><div class="text-sm font-semibold">${esc(i.label)}</div><div class="text-xs text-slate-400">${esc(i.desc)}</div></div></li>`; }).join('')}
+        </ul>
+        <p class="text-xs text-slate-500 mt-4">Son giriş: ${esc(fmtDT(a.lastUsed))}</p>
+      </article>`).join('');
+}
+
+/* ---------- Güvenlik ---------- */
+function currentDevice() {
+    const ua = navigator.userAgent;
+    const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Tarayıcı';
+    const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Bilinmeyen sistem';
+    return { device: `${browser} · ${os}`, icon: /Android|iPhone|iPad/.test(ua) ? 'fa-mobile-screen' : 'fa-desktop' };
+}
+function renderSessions() {
+    $('#sessions-list').innerHTML = state.sessions.map(s => `
+      <li class="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-300"><i class="fa-solid ${esc(s.icon)}"></i></div>
+          <div class="min-w-0">
+            <div class="text-sm font-semibold truncate">${esc(s.device)} <span class="badge badge-ok ml-1">Bu cihaz</span></div>
+            <div class="text-xs text-slate-400">Şu an açık</div>
+          </div>
+        </div>
+      </li>`).join('');
+}
+function renderLogs() {
+    const list = [...state.logs].sort((a, b) => b.t - a.t);
+    if (!list.length) { $('#log-list').innerHTML = '<li class="text-sm text-slate-400">Henüz hesap hareketi yok.</li>'; return; }
+    $('#log-list').innerHTML = list.map(l => {
+        const [ic, cls] = LOG_STYLE[l.kind] || LOG_STYLE.session;
+        return `<li class="relative"><span class="tl-dot ${cls}"><i class="fa-solid ${ic}"></i></span><div class="text-sm">${esc(l.text)}</div><div class="text-xs text-slate-500 mt-0.5">${esc(fmtDT(l.t))}</div></li>`;
+    }).join('');
+}
+
+/* ---------- Geliştirici ---------- */
+function renderDev() {
+    const el = $('#dev-list');
+    if (!state.devApps.length) {
+        el.innerHTML = `<div class="glass p-8 text-center"><div class="text-3xl mb-3" aria-hidden="true">⚡</div><h2 class="font-bold text-lg">Henüz uygulaman yok</h2><p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">Uygulamana Highly ID ile giriş eklemek için bir uygulama oluştur; client ID ve secret hemen hazır olur.</p><button type="button" class="btn btn-primary mt-4" data-action="new-app">Yeni uygulama oluştur</button></div>`;
+        return;
+    }
+    el.innerHTML = state.devApps.map(d => `
+      <article class="glass p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0"><h2 class="font-bold text-lg truncate">${esc(d.name)}</h2><p class="text-xs text-slate-400">Oluşturuldu: ${esc(fmtD(d.created))}</p></div>
+          <button type="button" class="btn btn-danger btn-sm shrink-0" data-action="delete-app" data-id="${esc(d.id)}">Uygulamayı sil</button>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mt-5">
+          <div>
+            <span class="lbl">Client ID</span>
+            <div class="code-box mono"><span>${esc(d.clientId)}</span><button type="button" class="btn btn-ghost btn-sm" data-action="copy" data-value="${esc(d.clientId)}" aria-label="Client ID'yi kopyala"><i class="fa-regular fa-copy"></i></button></div>
+          </div>
+          <div>
+            <span class="lbl">Client secret</span>
+            <div class="code-box mono"><span>hly_cs_••••••••••••${esc(d.secretLast4)}</span><button type="button" class="btn btn-ghost btn-sm" data-action="regen-secret" data-id="${esc(d.id)}">Yenile</button></div>
+          </div>
+        </div>
+        <div class="mt-5">
+          <span class="lbl">İzin verilen yönlendirme adresleri (redirect_uri)</span>
+          <ul class="space-y-2">
+            ${d.uris.map((u, i) => `<li class="code-box mono"><span>${esc(u)}</span><button type="button" class="btn btn-ghost btn-sm" data-action="remove-uri" data-id="${esc(d.id)}" data-i="${i}" aria-label="Adresi kaldır"><i class="fa-solid fa-xmark"></i></button></li>`).join('')}
+          </ul>
+          <form class="flex gap-2 mt-3" data-form="add-uri" data-id="${esc(d.id)}" novalidate>
+            <input class="field mono" style="font-size:.8rem" name="uri" placeholder="https://uygulaman.com/auth/callback" inputmode="url" aria-label="Yeni yönlendirme adresi">
+            <button type="submit" class="btn btn-ghost shrink-0">Ekle</button>
+          </form>
+          <p class="err" data-err hidden></p>
+        </div>
+      </article>`).join('');
+}
+function checkRedirect(u, existing = []) {
+    let url;
+    try { url = new URL(u); } catch { return 'Geçerli bir adres yaz. Örnek: https://uygulaman.com/auth/callback'; }
+    const local = url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname);
+    if (url.protocol !== 'https:' && !local) return 'Adres https:// ile başlamalı (yerel geliştirme için http://localhost olabilir).';
+    if (u.includes('*')) return 'Adreste * kullanılamaz; tam adresi yaz.';
+    if (url.hash) return 'Adreste # (fragment) olamaz.';
+    if (existing.includes(u)) return 'Bu adres zaten ekli.';
+    return '';
+}
+async function saveUris(d, uris) {
+    const { error } = await sb.from('dev_apps').update({ redirect_uris: uris }).eq('id', d.id);
+    if (error) throw error;
+    d.uris = uris;
+}
+
+/* ---------- Diyaloglar ---------- */
+const dlg = $('#dlg');
+let dlgResolve = null;
+dlg.addEventListener('close', () => { if (dlgResolve) { const r = dlgResolve; dlgResolve = null; r(dlg.returnValue === 'ok'); } });
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close('cancel'); });
+
+function ask({ title, body, ok, danger = true }) {
+    return new Promise(resolve => {
+        dlgResolve = resolve;
+        dlg.returnValue = 'cancel';
+        dlg.innerHTML = `<form method="dialog" class="dlg-box">
+          <h2 id="dlg-title" class="text-lg font-bold">${esc(title)}</h2>
+          <p class="text-sm text-slate-400 mt-2">${esc(body)}</p>
+          <div class="mt-6 flex justify-end gap-2">
+            <button value="cancel" class="btn btn-ghost">Vazgeç</button>
+            <button value="ok" class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}">${esc(ok)}</button>
+          </div></form>`;
+        dlg.showModal();
+    });
+}
+function showSecret({ title, clientId, secret }) {
+    dlg.innerHTML = `<div class="dlg-box">
+      <h2 id="dlg-title" class="text-lg font-bold">${esc(title)}</h2>
+      ${clientId ? `<span class="lbl mt-4">Client ID</span><div class="code-box mono"><span>${esc(clientId)}</span><button type="button" class="btn btn-ghost btn-sm" data-action="copy" data-value="${esc(clientId)}" aria-label="Client ID'yi kopyala"><i class="fa-regular fa-copy"></i></button></div>` : ''}
+      <span class="lbl mt-4">Client secret</span>
+      <div class="code-box mono"><span>${esc(secret)}</span><button type="button" class="btn btn-ghost btn-sm" data-action="copy" data-value="${esc(secret)}" aria-label="Secret'ı kopyala"><i class="fa-regular fa-copy"></i></button></div>
+      <div class="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Secret'ı şimdi kaydet. Güvenlik nedeniyle bir daha gösterilmeyecek.</div>
+      <div class="mt-5 flex justify-end"><button type="button" class="btn btn-primary" data-action="close-dlg">Kaydettim, kapat</button></div></div>`;
+    if (!dlg.open) dlg.showModal();
+}
+function openCreateApp() {
+    dlg.returnValue = 'cancel';
+    dlg.innerHTML = `<form class="dlg-box" data-form="create-app" novalidate>
+      <h2 id="dlg-title" class="text-lg font-bold">Yeni uygulama oluştur</h2>
+      <div class="mt-4 space-y-4">
+        <div><label class="lbl" for="ca-name">Uygulama adı</label><input id="ca-name" class="field" maxlength="40" autocomplete="off"><p class="err" id="ca-name-err" hidden></p></div>
+        <div><label class="lbl" for="ca-uri">Yönlendirme adresi (redirect_uri)</label><input id="ca-uri" class="field mono" style="font-size:.8rem" placeholder="https://uygulaman.com/auth/callback" inputmode="url"><p class="hint">Giriş sonrası kullanıcı buraya döner. Sonradan başka adresler ekleyebilirsin.</p><p class="err" id="ca-uri-err" hidden></p></div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" class="btn btn-ghost" data-action="close-dlg">Vazgeç</button><button type="submit" class="btn btn-primary">Uygulama oluştur</button></div></form>`;
+    dlg.showModal();
+    $('#ca-name').focus();
+}
+
+/* ---------- Olaylar ---------- */
+async function copyText(v) {
+    try { await navigator.clipboard.writeText(v); toast('Kopyalandı.'); }
+    catch { toast('Kopyalanamadı. Metni seçip elle kopyala.', 'err'); }
+}
+document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-action]');
+    if (!b) return;
+    const { action, id } = b.dataset;
+
+    if (action === 'pick-emoji') { draft.emoji = b.dataset.emoji; draft.avatarUrl = ''; $('#f-avatar').value = ''; renderEmojiRow(); renderCard(); }
+    else if (action === 'reset-profile') { draft = { ...state.user }; ['f-name', 'f-username', 'f-email', 'f-avatar'].forEach(i => fieldErr(i, '')); fillProfileForm(); toast('Değişiklikler geri alındı.'); }
+    else if (action === 'toggle-pw') {
+        const inp = $('#' + b.dataset.target), show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        b.innerHTML = `<i class="fa-solid ${show ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+        b.setAttribute('aria-label', show ? 'Şifreyi gizle' : 'Şifreyi göster');
+    }
+    else if (action === 'logout') {
+        await busy(b, async () => {
+            const { error } = await sb.auth.signOut();
+            if (error) return fail(error, 'Çıkış yapılamadı.');
+            location.replace(LOGIN_URL);
+        });
+    }
+    else if (action === 'copy') copyText(b.dataset.value);
+    else if (action === 'close-dlg') dlg.close('cancel');
+
+    else if (action === 'revoke-app') {
+        const app = state.apps.find(a => a.id === id); if (!app) return;
+        if (await ask({ title: `${app.name} erişimi kaldırılsın mı?`, body: `${app.name} artık Highly ID ile giriş yapamaz ve profil bilgilerine erişemez. İstersen sonra uygulamada yeniden izin verebilirsin.`, ok: 'Erişimi kaldır' })) {
+            const { error } = await sb.from('app_grants').delete().eq('id', id);
+            if (error) return fail(error, 'Erişim kaldırılamadı. Tekrar dene.');
+            state.apps = state.apps.filter(a => a.id !== id);
+            renderApps();
+            await addLog('revoke', `${app.name} erişimi kaldırıldı`);
+            toast(`${app.name} erişimi kaldırıldı.`);
+        }
+    }
+    else if (action === 'end-others') {
+        if (await ask({ title: 'Diğer oturumlar kapatılsın mı?', body: 'Bu cihaz dışındaki tüm cihazlarda Highly ID oturumun kapanır.', ok: 'Diğerlerini kapat' })) {
+            const { error } = await sb.auth.signOut({ scope: 'others' });
+            if (error) return fail(error, 'Oturumlar kapatılamadı. Tekrar dene.');
+            await addLog('session', 'Diğer tüm oturumlar kapatıldı');
+            toast('Diğer oturumlar kapatıldı.');
+        }
+    }
+
+    else if (action === 'new-app') openCreateApp();
+    else if (action === 'delete-app') {
+        const d = state.devApps.find(x => x.id === id); if (!d) return;
+        if (await ask({ title: `${d.name} uygulaması silinsin mi?`, body: 'Client ID ve secret geçersiz olur; bu uygulamayla giriş yapan kullanıcılar oturum açamaz.', ok: 'Uygulamayı sil' })) {
+            const { error } = await sb.from('dev_apps').delete().eq('id', id);
+            if (error) return fail(error, 'Uygulama silinemedi. Tekrar dene.');
+            state.devApps = state.devApps.filter(x => x.id !== id);
+            renderDev(); await addLog('dev', `${d.name} uygulaması silindi`); toast('Uygulama silindi.');
+        }
+    }
+    else if (action === 'regen-secret') {
+        const d = state.devApps.find(x => x.id === id); if (!d) return;
+        if (await ask({ title: 'Secret yenilensin mi?', body: 'Eski secret hemen geçersiz olur. Sunucundaki değeri yenisiyle güncellemen gerekir.', ok: "Secret'ı yenile" })) {
+            const secret = 'hly_cs_' + randToken(40);
+            const { error } = await sb.from('dev_apps').update({ client_secret_hash: await sha256Hex(secret), secret_last4: secret.slice(-4) }).eq('id', id);
+            if (error) return fail(error, 'Secret yenilenemedi. Tekrar dene.');
+            d.secretLast4 = secret.slice(-4);
+            renderDev(); addLog('dev', `${d.name} secret'ı yenilendi`);
+            showSecret({ title: 'Yeni secret hazır', secret });
+        }
+    }
+    else if (action === 'remove-uri') {
+        const d = state.devApps.find(x => x.id === id); if (!d) return;
+        if (d.uris.length <= 1) { toast('En az bir yönlendirme adresi kalmalı.', 'err'); return; }
+        await busy(b, async () => {
+            try { await saveUris(d, d.uris.filter((_, i) => i !== +b.dataset.i)); renderDev(); toast('Adres kaldırıldı.'); }
+            catch (err) { fail(err, 'Adres kaldırılamadı. Tekrar dene.'); }
+        });
+    }
+});
+
+document.addEventListener('submit', e => {
+    const f = e.target.dataset && e.target.dataset.form;
+    if (f === 'add-uri') {
+        e.preventDefault();
+        const d = state.devApps.find(x => x.id === e.target.dataset.id); if (!d) return;
+        const val = e.target.elements.uri.value.trim();
+        const msg = checkRedirect(val, d.uris);
+        const p = e.target.parentElement.querySelector('[data-err]');
+        if (msg) { p.textContent = msg; p.hidden = false; return; }
+        busy(e.submitter, async () => {
+            try { await saveUris(d, [...d.uris, val]); renderDev(); toast('Adres eklendi.'); }
+            catch (err) { fail(err, 'Adres eklenemedi. Tekrar dene.'); }
+        });
+    }
+    else if (f === 'create-app') {
+        e.preventDefault();
+        const name = $('#ca-name').value.trim(), uri = $('#ca-uri').value.trim();
+        let ok = fieldErr('ca-name', name.length >= 2 ? '' : 'Uygulama adı en az 2 karakter olmalı.');
+        ok = fieldErr('ca-uri', checkRedirect(uri)) && ok;
+        if (!ok) return;
+        busy(e.submitter, async () => {
+            const clientId = 'hly_' + randToken(24), secret = 'hly_cs_' + randToken(40);
+            const { data, error } = await sb.from('dev_apps').insert({
+                user_id: state.uid, name, client_id: clientId,
+                client_secret_hash: await sha256Hex(secret), secret_last4: secret.slice(-4), redirect_uris: [uri]
+            }).select('id, created_at').single();
+            if (error) return fail(error, 'Uygulama oluşturulamadı. Tekrar dene.');
+            state.devApps.unshift({ id: data.id, name, clientId, secretLast4: secret.slice(-4), created: new Date(data.created_at), uris: [uri] });
+            renderDev(); addLog('dev', `${name} uygulaması oluşturuldu`);
+            showSecret({ title: 'Uygulaman hazır', clientId, secret });
+        });
+    }
+});
+
+/* ---------- Başlat ---------- */
+async function loadAll(user) {
+    const [p, g, l, d] = await Promise.all([
+        sb.from('profiles').select('full_name, username, emoji, avatar_url, hid, created_at').eq('id', user.id).single(),
+        sb.rpc('get_my_grants'),
+        sb.from('audit_logs').select('kind, text, created_at').order('created_at', { ascending: false }).limit(50),
+        sb.from('dev_apps').select('id, name, client_id, secret_last4, redirect_uris, created_at').order('created_at', { ascending: false })
+    ]);
+    if (p.error) throw p.error;
+    if (g.error) throw g.error;
+    if (l.error) throw l.error;
+    if (d.error) throw d.error;
+
+    state.uid = user.id;
+    state.user = { name: p.data.full_name, username: p.data.username, email: user.email, emoji: p.data.emoji, avatarUrl: p.data.avatar_url || '', verified: !!user.email_confirmed_at, since: new Date(p.data.created_at), hid: p.data.hid };
+    state.apps = g.data.map(r => ({ id: r.id, name: r.app_name, granted: new Date(r.created_at), lastUsed: new Date(r.last_used_at), scopes: r.scopes }));
+    state.logs = l.data.map(r => ({ t: new Date(r.created_at), kind: r.kind, text: r.text }));
+    state.devApps = d.data.map(r => ({ id: r.id, name: r.name, clientId: r.client_id, secretLast4: r.secret_last4, created: new Date(r.created_at), uris: r.redirect_uris }));
+    state.sessions = [{ id: 'current', ...currentDevice() }];
+    draft = { ...state.user };
+}
+
+async function init() {
+    if (SUPABASE_URL.includes('YOUR-PROJECT') || SUPABASE_ANON_KEY.includes('YOUR-ANON')) {
+        bootMessage('Dosyanın üstündeki <b>SUPABASE_URL</b> ve <b>SUPABASE_ANON_KEY</b> değerlerini doldur.');
+        return;
+    }
+    if (!window.supabase) { bootMessage('Supabase kütüphanesi yüklenemedi. İnternet bağlantını kontrol et.'); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const { data: { user }, error } = await sb.auth.getUser();
+    if (error || !user) { location.replace(LOGIN_URL); return; }
+    sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') location.replace(LOGIN_URL); });
+
+    try { await loadAll(user); }
+    catch (err) {
+        console.error(err);
+        bootMessage('Veriler yüklenemedi. supabase.sql dosyasını çalıştırdığından ve profilinin oluştuğundan emin ol.');
+        return;
+    }
+    renderUserChips(); fillProfileForm(); renderApps(); renderSessions(); renderLogs(); renderDev(); route();
+    $('#boot').remove();
+}
+init();
+})();
+</script>
+</body>
+</html>
