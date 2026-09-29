@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <title>Giriş yap · Highly ID</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, 'Segoe UI', sans-serif; background: #020617; color: #e2e8f0; }
+        ::selection { background: #3b82f6; color: #fff; }
+        :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+        .glass { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 1.25rem; }
+        .text-gradient { background: linear-gradient(90deg, #60a5fa, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .logo-h { width: 2.25rem; height: 2.25rem; border-radius: .65rem; background: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; box-shadow: 0 0 12px rgba(37,99,235,.6); }
+        .lbl { display: block; font-size: .8rem; font-weight: 600; color: #cbd5e1; margin-bottom: .35rem; }
+        .hint { font-size: .75rem; color: #94a3b8; margin-top: .35rem; }
+        .field { width: 100%; background: rgba(15,23,42,.7); border: 1px solid rgba(255,255,255,.1); border-radius: .75rem; padding: .7rem .85rem; color: #f1f5f9; font-size: .92rem; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .field::placeholder { color: #64748b; }
+        .field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; border-radius: .75rem; padding: .75rem 1rem; font-weight: 700; font-size: .92rem; cursor: pointer; background: #2563eb; color: #fff; transition: background .15s, box-shadow .15s; }
+        .btn:hover { background: #3b82f6; box-shadow: 0 0 18px rgba(59,130,246,.45); }
+        .btn:disabled { opacity: .6; cursor: wait; }
+        .tab { flex: 1; padding: .55rem; border-radius: .6rem; font-size: .88rem; font-weight: 600; color: #94a3b8; cursor: pointer; transition: background .15s, color .15s; }
+        .tab[aria-selected="true"] { background: rgba(59,130,246,.18); color: #bfdbfe; }
+        .linkbtn { color: #93c5fd; font-size: .82rem; font-weight: 600; cursor: pointer; }
+        .linkbtn:hover { color: #bfdbfe; text-decoration: underline; }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="fixed inset-0 -z-10 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[560px] h-[560px] bg-blue-600/10 blur-[130px] rounded-full"></div>
+        <div class="absolute bottom-0 right-0 w-[420px] h-[420px] bg-emerald-500/[0.07] blur-[130px] rounded-full"></div>
+    </div>
+
+    <main class="min-h-screen flex items-center justify-center px-4 py-10">
+        <div class="w-full max-w-md">
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <div class="logo-h">H</div>
+                <span class="text-2xl font-extrabold tracking-wider text-gradient">HIGHLY</span>
+                <span class="text-base font-semibold text-slate-400">ID</span>
+            </div>
+
+            <div class="glass p-6 sm:p-8">
+                <div id="tabs" class="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.07] mb-6" role="tablist">
+                    <button type="button" class="tab" role="tab" id="tab-login" data-view="login">Giriş yap</button>
+                    <button type="button" class="tab" role="tab" id="tab-signup" data-view="signup">Kayıt ol</button>
+                </div>
+
+                <h1 id="title" class="text-2xl font-extrabold tracking-tight"></h1>
+                <p id="sub" class="text-sm text-slate-400 mt-1 mb-5"></p>
+
+                <div id="msg" class="hidden rounded-xl border p-3 text-sm mb-4" role="alert"></div>
+
+                <!-- Giriş -->
+                <form id="form-login" class="space-y-4" novalidate>
+                    <div><label class="lbl" for="l-email">E-posta</label><input id="l-email" type="email" class="field" autocomplete="email" inputmode="email"></div>
+                    <div><label class="lbl" for="l-pass">Şifre</label><input id="l-pass" type="password" class="field" autocomplete="current-password"></div>
+                    <button type="submit" class="btn">Giriş yap</button>
+                    <div class="text-center"><button type="button" class="linkbtn" data-view="forgot">Şifremi unuttum</button></div>
+                </form>
+
+                <!-- Kayıt -->
+                <form id="form-signup" class="space-y-4" novalidate hidden>
+                    <div><label class="lbl" for="s-name">Ad soyad</label><input id="s-name" class="field" autocomplete="name" maxlength="50"></div>
+                    <div>
+                        <label class="lbl" for="s-user">Kullanıcı adı</label>
+                        <input id="s-user" class="field" autocomplete="username" maxlength="20" placeholder="emir">
+                        <p class="hint">3–20 karakter; küçük harf, rakam, alt çizgi. Alınmışsa sana otomatik bir ad atanır, Profilim'den değiştirebilirsin.</p>
+                    </div>
+                    <div><label class="lbl" for="s-email">E-posta</label><input id="s-email" type="email" class="field" autocomplete="email" inputmode="email"></div>
+                    <div><label class="lbl" for="s-pass">Şifre</label><input id="s-pass" type="password" class="field" autocomplete="new-password"><p class="hint">En az 8 karakter.</p></div>
+                    <button type="submit" class="btn">Hesap oluştur</button>
+                </form>
+
+                <!-- Şifremi unuttum -->
+                <form id="form-forgot" class="space-y-4" novalidate hidden>
+                    <div><label class="lbl" for="f-email">E-posta</label><input id="f-email" type="email" class="field" autocomplete="email" inputmode="email"></div>
+                    <button type="submit" class="btn">Sıfırlama bağlantısı gönder</button>
+                    <div class="text-center"><button type="button" class="linkbtn" data-view="login">Girişe dön</button></div>
+                </form>
+
+                <!-- Yeni şifre (e-postadaki bağlantıdan gelince) -->
+                <form id="form-recovery" class="space-y-4" novalidate hidden>
+                    <div><label class="lbl" for="r-pass">Yeni şifre</label><input id="r-pass" type="password" class="field" autocomplete="new-password"><p class="hint">En az 8 karakter.</p></div>
+                    <div><label class="lbl" for="r-pass2">Yeni şifre (tekrar)</label><input id="r-pass2" type="password" class="field" autocomplete="new-password"></div>
+                    <button type="submit" class="btn">Şifreyi kaydet</button>
+                </form>
+            </div>
+
+            <p class="text-center text-xs text-slate-500 mt-6">Highly ID, Highly uygulamalarına tek hesapla giriş yapmanı sağlar.</p>
+        </div>
+    </main>
+
+<script>
+(() => {
+'use strict';
+
+/* dashboard.html ile AYNI değerleri gir */
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+const DASHBOARD_URL = 'dashboard.html';
+
+const $ = s => document.querySelector(s);
+const VIEWS = {
+    login:    { title: 'Highly ID ile giriş yap', sub: 'Hesabınla devam et.' },
+    signup:   { title: 'Hesap oluştur', sub: 'Tek hesapla tüm Highly uygulamalarına gir.' },
+    forgot:   { title: 'Şifreni sıfırla', sub: 'E-posta adresine bir sıfırlama bağlantısı göndereceğiz.' },
+    recovery: { title: 'Yeni şifre belirle', sub: 'Hesabın için yeni bir şifre yaz.' }
+};
+let sb;
+
+/* ---------- Arayüz ---------- */
+function message(text, tone = 'err') {
+    const m = $('#msg');
+    if (!text) { m.classList.add('hidden'); return; }
+    m.textContent = text;
+    m.className = 'rounded-xl border p-3 text-sm mb-4 ' + (tone === 'ok'
+        ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+        : 'border-rose-400/30 bg-rose-400/10 text-rose-200');
+}
+function show(view, msg, tone) {
+    Object.keys(VIEWS).forEach(v => { $('#form-' + v).hidden = v !== view; });
+    $('#title').textContent = VIEWS[view].title;
+    $('#sub').textContent = VIEWS[view].sub;
+    $('#tabs').hidden = view === 'forgot' || view === 'recovery';
+    ['login', 'signup'].forEach(v => $('#tab-' + v).setAttribute('aria-selected', String(v === view)));
+    document.title = VIEWS[view].title + ' · Highly ID';
+    message(msg, tone);
+}
+document.addEventListener('click', e => {
+    const b = e.target.closest('[data-view]');
+    if (b) show(b.dataset.view);
+});
+async function busy(btn, fn) {
+    if (btn) btn.disabled = true;
+    try { return await fn(); } finally { if (btn) btn.disabled = false; }
+}
+function friendly(err) {
+    const t = (err && err.message || '').toLowerCase();
+    if (t.includes('invalid login')) return 'E-posta veya şifre yanlış.';
+    if (t.includes('not confirmed')) return 'E-postanı henüz onaylamadın. Gelen kutundaki bağlantıya tıkla.';
+    if (t.includes('rate limit') || t.includes('too many')) return 'Çok fazla deneme yapıldı. Biraz bekleyip tekrar dene.';
+    if (t.includes('password') && t.includes('characters')) return 'Şifre en az 8 karakter olmalı.';
+    if (t.includes('same password')) return 'Yeni şifre eskisiyle aynı olamaz.';
+    return 'Bir sorun oluştu. Biraz sonra tekrar dene.';
+}
+
+/* ---------- Yönlendirme ---------- */
+// ?next=... yalnızca aynı siteye ait yollara izin verir (open-redirect koruması)
+function target() {
+    const next = new URLSearchParams(location.search).get('next');
+    if (next) {
+        try {
+            const u = new URL(next, location.href);
+            if (u.origin === location.origin) return u.pathname + u.search + u.hash;
+        } catch { /* geçersiz adres: varsayılana düş */ }
+    }
+    return DASHBOARD_URL;
+}
+const go = () => location.replace(target());
+
+function deviceName() {
+    const ua = navigator.userAgent;
+    const b = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Tarayıcı';
+    const o = /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Bilinmeyen sistem';
+    return `${b} · ${o}`;
+}
+
+/* ---------- Formlar ---------- */
+$('#form-login').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = $('#l-email').value.trim(), password = $('#l-pass').value;
+    if (!email || !password) return message('E-posta ve şifreni yaz.');
+    busy(e.submitter, async () => {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) return message(friendly(error));
+        await sb.from('audit_logs').insert({ user_id: data.user.id, kind: 'login', text: `Giriş yapıldı (${deviceName()})` });
+        go();
+    });
+});
+
+$('#form-signup').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#s-name').value.trim(), username = $('#s-user').value.trim().toLowerCase(), email = $('#s-email').value.trim(), password = $('#s-pass').value;
+    if (name.length < 2) return message('Ad soyad en az 2 karakter olmalı.');
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) return message('Kullanıcı adı 3–20 karakter olmalı; yalnızca küçük harf, rakam ve alt çizgi kullan.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return message('Geçerli bir e-posta adresi yaz.');
+    if (password.length < 8) return message('Şifre en az 8 karakter olmalı.');
+    busy(e.submitter, async () => {
+        const { data, error } = await sb.auth.signUp({
+            email, password,
+            options: { data: { full_name: name, username }, emailRedirectTo: location.origin + location.pathname }
+        });
+        if (error) return message(friendly(error));
+        // E-posta onayı açıkken kayıtlı adresle kayıt denemesi hata vermez, kimlik listesi boş döner
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+            return show('login', 'Bu e-posta ile zaten bir hesap var. Giriş yapabilirsin.');
+        }
+        if (data.session) return go();
+        show('login', 'Hesabını oluşturduk. E-postana gelen bağlantıyla onayla, sonra giriş yap.', 'ok');
+    });
+});
+
+$('#form-forgot').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = $('#f-email').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return message('Geçerli bir e-posta adresi yaz.');
+    busy(e.submitter, async () => {
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        if (error) return message(friendly(error));
+        // Hesap var mı yok mu belli etmeyen ortak yanıt
+        show('login', 'Bu adres kayıtlıysa sıfırlama bağlantısı gönderildi. Gelen kutunu kontrol et.', 'ok');
+    });
+});
+
+$('#form-recovery').addEventListener('submit', e => {
+    e.preventDefault();
+    const p1 = $('#r-pass').value, p2 = $('#r-pass2').value;
+    if (p1.length < 8) return message('Şifre en az 8 karakter olmalı.');
+    if (p1 !== p2) return message('Şifreler eşleşmiyor.');
+    busy(e.submitter, async () => {
+        const { data, error } = await sb.auth.updateUser({ password: p1 });
+        if (error) return message(friendly(error));
+        await sb.from('audit_logs').insert({ user_id: data.user.id, kind: 'password', text: 'Şifre sıfırlandı' });
+        go();
+    });
+});
+
+/* ---------- Başlat ---------- */
+async function init() {
+    show('login');
+    if (SUPABASE_URL.includes('YOUR-PROJECT') || SUPABASE_ANON_KEY.includes('YOUR-ANON')) {
+        return message('Dosyanın üstündeki SUPABASE_URL ve SUPABASE_ANON_KEY değerlerini doldur.');
+    }
+    if (!window.supabase) return message('Supabase kütüphanesi yüklenemedi. İnternet bağlantını kontrol et.');
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') show('recovery'); });
+
+    // Sıfırlama bağlantısından geldiyse otomatik yönlendirme yapma
+    if (/type=recovery/.test(location.hash)) return;
+
+    // getUser sunucuda doğrular; eski/geçersiz oturum dashboard ile arasında döngü yaratmasın
+    const { data: { user }, error } = await sb.auth.getUser();
+    if (user && !error) return go();
+    if (error) await sb.auth.signOut({ scope: 'local' });
+}
+init();
+})();
+</script>
+</body>
+</html>
